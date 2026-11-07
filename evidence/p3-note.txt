@@ -1,0 +1,3 @@
+Reviewer note on https://raw.githubusercontent.com/Mary1270/ProposalLens/main/evidence/p3.txt
+
+The reviewer confirms this is a parameter change and that the execution delay is 72 hours. No admin powers are granted.

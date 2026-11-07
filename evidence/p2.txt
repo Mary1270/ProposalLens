@@ -1,0 +1,6 @@
+DAO Demo Proposal 2: Upgrade the vault contract
+
+Type of change: smart contract upgrade of the vault implementation.
+Execution delay: there is no timelock, the upgrade executes immediately.
+Privileges: the new implementation grants an admin role that can pause and mint.
+Audit: no independent audit has been performed.

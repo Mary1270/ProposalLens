@@ -1,0 +1,5 @@
+DAO Demo Proposal 3: Update the voting period parameter
+
+Type of change: parameter change, the voting period is changed from 5 days to 7 days.
+Execution delay: the change takes effect after a 72 hour timelock.
+Privileges: no admin, minter or upgrade powers are granted.

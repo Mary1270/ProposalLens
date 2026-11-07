@@ -1,0 +1,5 @@
+Amendment to https://raw.githubusercontent.com/Mary1270/ProposalLens/main/evidence/p1.txt
+
+Requested amount: 2,500,000 USDC to be paid from the treasury.
+Recipients: 1 recipient address.
+Execution delay: there is no timelock, the payment executes immediately after the vote passes.

@@ -1,0 +1,8 @@
+DAO Demo Proposal 1: Community workshop funding
+
+Type of change: treasury spend, a one-time payment from the DAO treasury.
+Requested amount: 5,000 USDC to be paid from the treasury.
+Recipients: 2 recipient addresses (the organizer wallet and the venue wallet).
+Execution delay: the payment executes after a 48 hour timelock.
+Privileges: this proposal does not grant any admin, minter or upgrade powers.
+Audit: not applicable, there are no contract code changes.
