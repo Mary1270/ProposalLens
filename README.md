@@ -91,7 +91,9 @@ if not registry.view().meets_max_risk("p1", "MEDIUM"):
 
 ## Deployment
 
-Deploy `contracts/proposallens.py` on GenLayer Studio. The contract is submitted on its own; there is no frontend in this repository. `evidence/` holds sample proposal pages used for live testing. The sample prefix is `https://raw.githubusercontent.com/Mary1270/ProposalLens/main/evidence/`.
+Deployed on GenLayer Studio at `0x3443670B59136e05937009DFd433D851dE238F9E` (constructor `900, 1800`). Explorer: https://explorer-studio.genlayer.com/address/0x3443670B59136e05937009DFd433D851dE238F9E
+
+The contract is submitted on its own; there is no frontend in this repository. `evidence/` holds sample proposal pages used for live testing. The sample prefix is `https://raw.githubusercontent.com/Mary1270/ProposalLens/main/evidence/`.
 
 ## Tests
 
