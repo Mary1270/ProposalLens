@@ -1,0 +1,52 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  unpack-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Unpack uploaded zip
+        run: |
+          shopt -s nullglob
+          changed=0
+          for z in ./*.zip; do
+            tmp=$(mktemp -d)
+            unzip -q -o "$z" -d "$tmp"
+            rm -rf "$tmp/__MACOSX"
+            src="$tmp"
+            if [ "$(ls -A "$tmp" | wc -l)" -eq 1 ] && [ -d "$tmp/$(ls -A "$tmp")" ]; then
+              src="$tmp/$(ls -A "$tmp")"
+            fi
+            rm -rf "$src/.github"
+            cp -a "$src"/. .
+            rm -f "$z"
+            changed=1
+          done
+          if [ "$changed" -eq 1 ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add -A
+            git commit -m "Unpack uploaded project zip"
+            git push origin HEAD:main
+          fi
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run offline tests
+        run: |
+          if [ -d tests ]; then
+            python -m unittest discover -s tests -p "test_*.py" -v
+          else
+            echo "No tests directory yet"
+          fi
