@@ -1041,6 +1041,104 @@ class TestChallenge(Base):
         self.assertTrue(res.startswith("REJECTED:"))
 
 
+OTHER_PREFIX = "https://raw.githubusercontent.com/other-dao/proposals/main/"
+SUB_PREFIX = PREFIX + "council/"
+
+
+class TestEvidenceBinding(Base):
+    def test_registration_stores_the_prefix(self):
+        pid = self.register("a")
+        self.assertEqual(self.prop(pid)["prefix"], PREFIX)
+        self.assertEqual(self.prop(pid)["label"], "Demo DAO")
+
+    def test_most_specific_prefix_wins(self):
+        self.call(OWNER, "add_prefix", SUB_PREFIX, "Council")
+        url = SUB_PREFIX + "x.txt"
+        stub.chain.pages[url] = LOW_PAGE
+        pid = self.call(ALICE, "register_proposal", url)
+        self.assertEqual(self.prop(pid)["prefix"], SUB_PREFIX)
+        self.assertEqual(self.prop(pid)["label"], "Council")
+
+    def test_most_specific_prefix_wins_regardless_of_order(self):
+        self.call(OWNER, "remove_prefix", PREFIX)
+        self.call(OWNER, "add_prefix", SUB_PREFIX, "Council")
+        self.call(OWNER, "add_prefix", PREFIX, "Demo DAO")
+        url = SUB_PREFIX + "y.txt"
+        stub.chain.pages[url] = LOW_PAGE
+        pid = self.call(ALICE, "register_proposal", url)
+        self.assertEqual(self.prop(pid)["prefix"], SUB_PREFIX)
+        pid2 = self.register("plain")
+        self.assertEqual(self.prop(pid2)["prefix"], PREFIX)
+
+    def test_challengeable_after_prefix_is_removed(self):
+        pid = self.rated("a", LOW_PAGE, gen=3)
+        self.call(OWNER, "remove_prefix", PREFIX)
+        self.assertEqual(json.loads(self.h.contract.list_prefixes()), [])
+        res = self.call(ALICE, "register_proposal", self.put("new", LOW_PAGE))
+        self.assertTrue(res.startswith("REJECTED:"))
+        res = self.challenge(
+            pid, "amend",
+            counter_page(url_for("a"), "Amount: 2,500,000 USDC\nRecipients: 1 recipient\nTimelock: none, executes immediately\n"),
+        )
+        self.assertEqual(res, "CHALLENGED")
+        out = json.loads(self.call(DAVE, "resolve_challenge", pid))
+        self.assertEqual((out["result"], out["risk"]), ("UPHELD", "HIGH"))
+        self.assertEqual(self.bal(BOB), 5 * WEI)
+
+    def test_challengeable_after_prefix_removed_and_replaced(self):
+        pid = self.rated("a")
+        self.call(OWNER, "remove_prefix", PREFIX)
+        self.call(OWNER, "add_prefix", OTHER_PREFIX, "Other DAO")
+        other = OTHER_PREFIX + "c.txt"
+        stub.chain.pages[other] = counter_page(url_for("a"), "Timelock: none\n")
+        res = self.call(BOB, "challenge_assessment", pid, other, value=2 * WEI)
+        self.assertTrue(res.startswith("REJECTED:"), res)
+        self.assertIn("registered prefix", res)
+        res = self.challenge(pid, "c1", counter_page(url_for("a"), "Timelock: none\n"))
+        self.assertEqual(res, "CHALLENGED")
+
+    def test_counter_from_another_live_prefix_is_rejected(self):
+        self.call(OWNER, "add_prefix", OTHER_PREFIX, "Other DAO")
+        pid = self.rated("a")
+        other = OTHER_PREFIX + "c.txt"
+        stub.chain.pages[other] = counter_page(url_for("a"), "Timelock: none\n")
+        before = self.bal(BOB)
+        res = self.call(BOB, "challenge_assessment", pid, other, value=2 * WEI)
+        self.assertTrue(res.startswith("REJECTED:"))
+        self.assertEqual(self.bal(BOB) - before, 2 * WEI)
+        self.assertEqual(self.prop(pid)["state"], "RATED")
+
+    def test_sub_prefix_proposal_rejects_counter_from_parent_prefix(self):
+        self.call(OWNER, "add_prefix", SUB_PREFIX, "Council")
+        url = SUB_PREFIX + "x.txt"
+        stub.chain.pages[url] = LOW_PAGE
+        pid = self.call(ALICE, "register_proposal", url)
+        self.call(DAVE, "assess", pid)
+        stub.chain.pages[url_for("parent")] = counter_page(url, "Timelock: none\n")
+        res = self.call(BOB, "challenge_assessment", pid, url_for("parent"), value=2 * WEI)
+        self.assertTrue(res.startswith("REJECTED:"))
+        sub_counter = SUB_PREFIX + "c.txt"
+        stub.chain.pages[sub_counter] = counter_page(url, "Timelock: none\n")
+        self.assertEqual(self.call(BOB, "challenge_assessment", pid, sub_counter, value=2 * WEI), "CHALLENGED")
+
+    def test_prefix_changes_do_not_touch_resolve_cancel_or_finalize(self):
+        pid = self.rated("a", gen=1)
+        self.challenge(pid, "c1", counter_page(url_for("a"), "Timelock: none\n"))
+        self.call(OWNER, "remove_prefix", PREFIX)
+        CLOCK[0] += STALE + 1
+        self.call(DAVE, "cancel_challenge", pid)
+        self.assertEqual(self.call(DAVE, "finalize", pid), "LOW")
+        self.assertEqual(self.h.contract.get_risk(pid), "LOW")
+        self.assertEqual(self.bal(ALICE), WEI)
+
+    def test_owner_cannot_rebind_an_existing_proposal(self):
+        pid = self.rated("a")
+        for _ in range(2):
+            self.call(OWNER, "remove_prefix", PREFIX)
+            self.call(OWNER, "add_prefix", PREFIX, "Renamed")
+        self.assertEqual(self.prop(pid)["prefix"], PREFIX)
+        self.assertEqual(self.prop(pid)["label"], "Demo DAO")
+
 class TestFinalizeAndRegistry(Base):
     def test_finalize_after_window_only(self):
         pid = self.rated("a", gen=2)

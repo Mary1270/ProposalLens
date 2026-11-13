@@ -765,10 +765,11 @@ class ProposalLens(gl.Contract):
             if old["state"] != "UNRATED":
                 return self._reject("proposal URL is already registered", value)
         label = ""
+        bound = ""
         for item in items:
-            if u.startswith(item[0]):
+            if u.startswith(item[0]) and len(u) > len(item[0]) and len(item[0]) > len(bound):
                 label = item[1]
-                break
+                bound = item[0]
         n = int(self.proposal_count) + 1
         self.proposal_count = u256(n)
         pid = "p" + str(n)
@@ -777,6 +778,7 @@ class ProposalLens(gl.Contract):
             "id": pid,
             "url": u,
             "label": label,
+            "prefix": bound,
             "registrant": self._sender(),
             "state": "REGISTERED",
             "assurance": value,
@@ -851,10 +853,10 @@ class ProposalLens(gl.Contract):
         bond = BOND_GEN * WEI
         if value != bond:
             return self._reject("challenge bond must be exactly " + str(BOND_GEN) + " GEN", value)
-        prefixes = [item[0] for item in self._prefixes()]
-        cu = _check_evidence(counter_evidence_url, prefixes)
+        bound = str(p.get("prefix", ""))
+        cu = _check_evidence(counter_evidence_url, [bound]) if bound else None
         if cu is None:
-            return self._reject("counter evidence is not under an allowed https prefix", value)
+            return self._reject("counter evidence is not under the proposal's registered prefix", value)
         if cu == p["url"]:
             return self._reject("counter evidence must differ from the proposal page", value)
         p["state"] = "CHALLENGED"

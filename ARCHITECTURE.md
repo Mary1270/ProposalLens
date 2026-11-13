@@ -2,7 +2,8 @@
 
 ## Entities
 
-- **Prefix**: an https URL prefix with a label, added by the contract owner. Proposals can only be registered under a current prefix. The label is copied onto each proposal as its DAO name.
+- **Prefix**: an https URL prefix with a label, added by the contract owner. Proposals can only be registered under a current prefix. When a proposal URL matches more than one prefix, the longest (most specific) one is used.
+- **Evidence binding**: at registration the matched prefix and its label are copied onto the proposal (`prefix`, `label`). This binding is immutable and is the proposal's challenge authority: counter-evidence must sit under the stored `prefix`, never under the owner's current prefix list. Removing, re-adding or adding prefixes later affects only new registrations.
 - **Proposal**: id `p1`, `p2`, ... with the canonical page URL, registrant, state, optional assurance, rating, and challenge data. One URL maps to one proposal; a URL whose proposal ended UNRATED may be registered again.
 - **Rating**: risk level, score, the list of rule hits (`why`), the derived fields, and the grounded quotes (`raw`) they came from.
 
@@ -49,7 +50,7 @@ Pages should be static text, ideally pinned to a commit. If the page changes bet
 
 ## URL rules
 
-Proposal and counter-evidence URLs must be https, ASCII with no whitespace or control characters, no credentials, no non-443 port, no `..`, `.` segments, `//` in the path, `%2e`, `%2f`, `%5c` or `%00`, no query and no fragment, and, after lower-casing the host and dropping `:443`, start with one of the owner's prefixes. Prefixes themselves must end with `/`, have a non-empty path and no query. Look-alike hosts and `host@evil` forms fail the parsed-URL checks.
+Proposal and counter-evidence URLs must be https, ASCII with no whitespace or control characters, no credentials, no non-443 port, no `..`, `.` segments, `//` in the path, `%2e`, `%2f`, `%5c` or `%00`, no query and no fragment, and, after lower-casing the host and dropping `:443`, start with one of the owner's current prefixes (registration) or with the proposal's stored prefix (counter-evidence). Prefixes themselves must end with `/`, have a non-empty path and no query. Look-alike hosts and `host@evil` forms fail the parsed-URL checks.
 
 ## Money
 
@@ -63,8 +64,8 @@ contract balance == sum(balances) + sum(open challenge bonds) + sum(open assuran
 
 ## Trust assumptions
 
-- The owner is trusted to choose prefixes under content the DAO controls. The owner cannot change ratings, windows, bonds or any balance, and removing a prefix does not affect existing proposals. A prefix on a place where anyone can publish lets anyone author a proposal page; consumers of the registry should check the proposal's `label` and URL.
-- A counter-evidence page is treated as an authoritative amendment for the fields it states. Challenging therefore requires a page under an approved prefix that cites the proposal URL.
+- The owner is trusted to choose prefixes under content the DAO controls. The owner cannot change ratings, windows, bonds or any balance, and changing the prefix list does not affect existing proposals: their assessment, challenge, resolution, cancellation and finalization all use the prefix stored at registration. A prefix on a place where anyone can publish lets anyone author a proposal page; consumers of the registry should check the proposal's `label` and URL.
+- A counter-evidence page is treated as an authoritative amendment for the fields it states. Challenging therefore requires a page under the proposal's own stored prefix that cites the proposal URL; a page under another DAO's prefix is rejected even if that prefix is currently approved.
 - The risk rules are a transparent summary of stated facts. They do not read contract code and say nothing about facts the page leaves out beyond the UNSTATED penalties.
 - Validators are trusted only to locate quoted facts. They never produce the risk level, and the code checks their quotes.
 - A registrant who attaches assurance accepts that a successful challenge pays it to the challenger, including when the cause is an ambiguous page.

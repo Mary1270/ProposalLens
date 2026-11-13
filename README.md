@@ -59,7 +59,7 @@ CHALLENGED --resolve_challenge, undetermined--> RATED, bond refunded, finalizabl
 CHALLENGED --stale, cancel_challenge--> RATED, bond refunded, finalizable now
 ```
 
-The registrant may attach an optional assurance of 0 to 100 whole GEN when registering. It is returned at the end of the proposal's life unless a challenge changes the risk level, in which case the challenger receives it together with their bond. A challenge is only about the evidence: the counter-evidence page must cite the proposal URL and sit under an approved prefix. The original page is not extracted again: fields stated on the counter page replace the same fields in the stored, consensus-accepted rating, the merged fields are re-scored by the same rules, and the challenge succeeds only if the risk level changes.
+The registrant may attach an optional assurance of 0 to 100 whole GEN when registering. It is returned at the end of the proposal's life unless a challenge changes the risk level, in which case the challenger receives it together with their bond. A challenge is only about the evidence: the counter-evidence page must cite the proposal URL and sit under the prefix the proposal was registered under. That prefix is stored on the proposal at registration and never changes, so later prefix edits by the owner cannot block or widen challenges to an existing proposal. The original page is not extracted again: fields stated on the counter page replace the same fields in the stored, consensus-accepted rating, the merged fields are re-scored by the same rules, and the challenge succeeds only if the risk level changes.
 
 ## Contract
 
@@ -67,7 +67,7 @@ The registrant may attach an optional assurance of 0 to 100 whole GEN when regis
 
 | Method | Who | Purpose |
 |---|---|---|
-| `add_prefix(prefix, label)` / `remove_prefix(prefix)` | owner | manage the https URL prefixes proposals may be registered under |
+| `add_prefix(prefix, label)` / `remove_prefix(prefix)` | owner | manage the https URL prefixes new proposals may be registered under; existing proposals keep their stored prefix |
 | `register_proposal(url)` payable, 0-100 whole GEN | anyone | register a proposal page; invalid input is refunded to the caller's balance, not reverted |
 | `assess(proposal_id)` | anyone | consensus extraction and rating |
 | `challenge_assessment(proposal_id, counter_evidence_url)` payable, exactly 2 GEN | anyone but the registrant | dispute the rating |
@@ -91,7 +91,7 @@ if not registry.view().meets_max_risk("p1", "MEDIUM"):
 
 ## Deployment
 
-Deployed on GenLayer Studio at `0x3443670B59136e05937009DFd433D851dE238F9E` (constructor `900, 1800`). Explorer: https://explorer-studio.genlayer.com/address/0x3443670B59136e05937009DFd433D851dE238F9E
+v1.1 is deployed on GenLayer Studio at `0x6BF94fa0bDB322Cef631F02B861E78786aA78dE3` (constructor `900, 1800`). Explorer: https://explorer-studio.genlayer.com/address/0x6BF94fa0bDB322Cef631F02B861E78786aA78dE3
 
 The contract is submitted on its own; there is no frontend in this repository. `evidence/` holds sample proposal pages used for live testing. The sample prefix is `https://raw.githubusercontent.com/Mary1270/ProposalLens/main/evidence/`.
 
